@@ -44,7 +44,7 @@ from core.exam_solver import solve_multiformat_questions, export_assessment_to_p
 
 # Page configuration
 st.set_page_config(
-    page_title="NCET GenAI Intelligence Suite",
+    page_title="PragyanAI GenAI Intelligence Suite",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -78,7 +78,7 @@ def notes_to_str(content) -> str:
 st.markdown(
     f"""
 <div class="main-header">
-    <h1>🎓 NCET GenAI: Multimodal RAG & Deep-Dive Notes Studio</h1>
+    <h1>PragyanAI GenAI: Multimodal RAG & Deep-Dive Notes Studio</h1>
     <p>Powered by Groq <code>{GROQ_MODEL}</code> & <code>whisper-large-v3</code> • In-Depth Notes Synthesizer • Exam Solver & Citations</p>
 </div>
 """,
