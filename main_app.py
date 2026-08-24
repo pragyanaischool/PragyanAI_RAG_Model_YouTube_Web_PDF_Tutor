@@ -1,5 +1,5 @@
 """
-Main Streamlit Application for NCET GenAI Multimodal RAG Suite.
+Main Streamlit Application for PragyanAI GenAI Multimodal RAG Suite.
 Integrates YouTube discovery, Slide Carousel Studio, Exam Evaluation, and Voice RAG.
 """
 
@@ -7,9 +7,22 @@ import os
 import streamlit as st
 from audio_recorder_streamlit import audio_recorder
 from langchain_groq import ChatGroq
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+# Safe cross-version LangChain chain import with fallback
+try:
+    from langchain.chains import create_retrieval_chain
+    from langchain.chains.combine_documents import create_stuff_documents_chain
+    LEGACY_CHAIN_AVAILABLE = True
+except ImportError:
+    try:
+        from langchain.chains.retrieval import create_retrieval_chain
+        from langchain.chains.combine_documents import create_stuff_documents_chain
+        LEGACY_CHAIN_AVAILABLE = True
+    except ImportError:
+        LEGACY_CHAIN_AVAILABLE = False
 
 from core.config import LANGUAGE_CODES, GROQ_MODEL, GROQ_API_KEY
 from core.vector_db import index_documents_to_chroma
@@ -353,6 +366,7 @@ with tab4:
             with st.spinner("Searching Vector DB and formulating response..."):
                 retriever = st.session_state["vectorstore"].as_retriever(search_kwargs={"k": 4})
                 llm = ChatGroq(model_name=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0.2)
+
                 prompt = ChatPromptTemplate.from_messages(
                     [
                         (
@@ -362,10 +376,27 @@ with tab4:
                         ("human", "{input}"),
                     ]
                 )
-                chain = create_retrieval_chain(retriever, create_stuff_documents_chain(llm, prompt))
-                response = chain.invoke({"input": active_query})
 
-                final_answer = translate_content(response["answer"], lang_code)
+                # Execute RAG using chain or modern LCEL runnable pipeline
+                if LEGACY_CHAIN_AVAILABLE:
+                    chain = create_retrieval_chain(retriever, create_stuff_documents_chain(llm, prompt))
+                    result = chain.invoke({"input": active_query})
+                    raw_answer = result["answer"]
+                    retrieved_chunks = result["context"]
+                else:
+                    def format_docs(docs):
+                        return "\n\n".join(d.page_content for d in docs)
+
+                    retrieved_chunks = retriever.invoke(active_query)
+                    rag_lcel_chain = (
+                        {"context": lambda x: format_docs(retrieved_chunks), "input": RunnablePassthrough()}
+                        | prompt
+                        | llm
+                        | StrOutputParser()
+                    )
+                    raw_answer = rag_lcel_chain.invoke(active_query)
+
+                final_answer = translate_content(raw_answer, lang_code)
                 st.markdown(f"#### 💡 Response ({selected_lang})")
                 st.write(final_answer)
                 tts_audio = text_to_speech(final_answer, lang_code)
@@ -373,7 +404,7 @@ with tab4:
                     st.audio(tts_audio, format="audio/mp3")
 
                 with st.expander("📚 Source Chunks Used"):
-                    for idx, doc in enumerate(response["context"]):
+                    for idx, doc in enumerate(retrieved_chunks):
                         src = doc.metadata.get("source", "Unknown")
                         st.markdown(f"<span class='source-pill'>Chunk {idx+1}</span> `{src}`", unsafe_allow_html=True)
                         st.caption(doc.page_content[:300] + "...")
