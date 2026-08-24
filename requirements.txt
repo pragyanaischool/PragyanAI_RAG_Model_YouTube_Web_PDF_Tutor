@@ -26,3 +26,4 @@ beautifulsoup4
 lxml
 google-search-results
 pytube
+torchvision
