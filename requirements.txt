@@ -15,7 +15,7 @@ trafilatura
 pypdf
 python-docx
 python-pptx
-duckduckgo-search
+ddgs
 youtube-search-python
 fpdf2
 gTTS
