@@ -1,49 +1,90 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+code, pre {
+    font-family: 'JetBrains Mono', monospace !important;
 }
 
 .main-header {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     padding: 24px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
     color: #f8fafc;
     margin-bottom: 24px;
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
 }
 
 .main-header h1 {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     margin: 0;
     color: #38bdf8;
 }
 
 .main-header p {
-    font-size: 14px;
+    font-size: 13.5px;
     color: #94a3b8;
     margin: 6px 0 0 0;
 }
 
-.slide-card {
-    background-color: #1e293b;
-    color: #f8fafc;
-    border-radius: 12px;
-    padding: 24px;
-    min-height: 280px;
-    border: 1px solid #334155;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+/* Markdown Container Enhancements */
+.stMarkdown h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #38bdf8 !important;
+    border-bottom: 2px solid #334155;
+    padding-bottom: 8px;
+    margin-top: 18px;
 }
 
-.source-pill {
-    display: inline-block;
-    padding: 3px 10px;
-    font-size: 11px;
+.stMarkdown h2 {
+    font-size: 18px;
     font-weight: 600;
-    border-radius: 12px;
-    background-color: #0284c7;
-    color: white;
-    margin-bottom: 6px;
+    color: #7dd3fc !important;
+    margin-top: 16px;
+}
+
+.stMarkdown h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e2e8f0 !important;
+    margin-top: 12px;
+}
+
+.stMarkdown p, .stMarkdown li {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #cbd5e1;
+}
+
+.stMarkdown blockquote {
+    border-left: 3px solid #38bdf8;
+    background-color: #1e293b;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    color: #94a3b8;
+}
+
+.stMarkdown table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+.stMarkdown th {
+    background-color: #1e293b;
+    color: #38bdf8;
+    padding: 10px;
+    border: 1px solid #334155;
+    text-align: left;
+}
+
+.stMarkdown td {
+    padding: 9px;
+    border: 1px solid #334155;
+    color: #cbd5e1;
 }
