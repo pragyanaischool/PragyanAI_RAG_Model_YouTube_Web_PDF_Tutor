@@ -3,9 +3,12 @@ langchain
 langchain-core
 langchain-community
 langchain-groq
+langchain-text-splitters
 langchain-huggingface
 sentence-transformers
-chromadb>
+youtube-transcript-api
+chromadb
+faiss-cpu
 groq
 yt-dlp
 trafilatura
@@ -19,3 +22,7 @@ gTTS
 audio-recorder-streamlit
 googletrans
 python-dotenv
+beautifulsoup4
+lxml
+google-search-results
+pytube
