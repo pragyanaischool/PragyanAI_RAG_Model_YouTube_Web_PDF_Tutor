@@ -27,3 +27,5 @@ lxml
 google-search-results
 pytube
 torchvision
+arxiv
+wikipedia
