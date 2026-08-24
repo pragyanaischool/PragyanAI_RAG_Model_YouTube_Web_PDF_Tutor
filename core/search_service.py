@@ -1,12 +1,12 @@
 """
-Search Service Module for NCET GenAI Multimodal RAG.
-Provides multi-video YouTube search with rich metadata extraction and 
-DuckDuckGo live web search paired with deep article text scraping.
+Search Service Module for PragyanAI GenAI Multimodal RAG.
+Robust multi-video YouTube search using yt-dlp native query search,
+paired with DuckDuckGo live web search and automated article extraction.
 """
 
 from typing import Any, Dict, List
+import yt_dlp
 from duckduckgo_search import DDGS
-from youtubesearchpython import VideosSearch
 from core.extractors.web_extractor import extract_from_url
 
 
@@ -14,8 +14,8 @@ def search_multiple_youtube_videos(
     topic: str, max_results: int = 6
 ) -> List[Dict[str, Any]]:
     """
-    Searches YouTube for videos matching a given topic or query and extracts
-    structured metadata including video IDs, titles, thumbnails, durations, and channels.
+    Searches YouTube using yt-dlp's built-in ytsearch engine without downloading audio/video.
+    Completely avoids third-party scraper proxy/httpx incompatibilities.
 
     Args:
         topic (str): The search query or educational topic.
@@ -26,7 +26,7 @@ def search_multiple_youtube_videos(
             - 'id': YouTube video ID
             - 'title': Video title
             - 'url': Direct YouTube URL
-            - 'duration': Video duration string (e.g. '12:45')
+            - 'duration': Formatted duration string (e.g., '12:45')
             - 'channel': Channel / creator name
             - 'views': View count string
             - 'thumbnail': Primary thumbnail image URL
@@ -34,36 +34,58 @@ def search_multiple_youtube_videos(
     if not topic or not topic.strip():
         return []
 
+    video_list: List[Dict[str, Any]] = []
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": True,  # Metadata-only retrieval without triggering downloads
+        "skip_download": True,
+    }
+
     try:
-        videos_search = VideosSearch(topic.strip(), limit=max_results)
-        raw_result = videos_search.result() or {}
-        raw_videos = raw_result.get("result", [])
+        query_str = f"ytsearch{max_results}:{topic.strip()}"
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            result = ydl.extract_info(query_str, download=False)
+            entries = result.get("entries", []) if result else []
 
-        video_list: List[Dict[str, Any]] = []
-        for vid in raw_videos:
-            thumbnails = vid.get("thumbnails", [])
-            thumb_url = thumbnails[0].get("url", "") if thumbnails else ""
-            channel_info = vid.get("channel", {})
-            channel_name = channel_info.get("name", "Unknown Channel") if isinstance(channel_info, dict) else "Unknown Channel"
-            view_info = vid.get("viewCount", {})
-            views = view_info.get("short", "N/A") if isinstance(view_info, dict) else "N/A"
+            for entry in entries:
+                if not entry:
+                    continue
 
-            video_list.append(
-                {
-                    "id": vid.get("id", ""),
-                    "title": vid.get("title", "Untitled Video"),
-                    "url": vid.get("link", f"https://www.youtube.com/watch?v={vid.get('id', '')}"),
-                    "duration": vid.get("duration", "N/A"),
-                    "channel": channel_name,
-                    "views": views,
-                    "thumbnail": thumb_url,
-                }
-            )
+                duration_sec = entry.get("duration")
+                if isinstance(duration_sec, (int, float)):
+                    mins, secs = divmod(int(duration_sec), 60)
+                    duration_str = f"{mins}:{secs:02d}"
+                else:
+                    duration_str = "N/A"
+
+                vid_id = entry.get("id", "")
+                video_url = entry.get("url") or f"https://www.youtube.com/watch?v={vid_id}"
+
+                thumbnails = entry.get("thumbnails", [])
+                thumb_url = (
+                    thumbnails[-1].get("url", "")
+                    if thumbnails
+                    else f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
+                )
+
+                video_list.append(
+                    {
+                        "id": vid_id,
+                        "title": entry.get("title", "Untitled Video"),
+                        "url": video_url,
+                        "duration": duration_str,
+                        "channel": entry.get("uploader")
+                        or entry.get("channel", "Unknown Channel"),
+                        "views": str(entry.get("view_count", "N/A")),
+                        "thumbnail": thumb_url,
+                    }
+                )
 
         return video_list
 
     except Exception as e:
-        print(f"[Error in search_service]: YouTube video search failed for query '{topic}': {e}")
+        print(f"[Error in search_service]: YouTube search failed for '{topic}': {e}")
         return []
 
 
@@ -89,7 +111,6 @@ def search_and_read_web_articles(
 
     try:
         with DDGS() as ddgs:
-            # Fetch search hits from DuckDuckGo
             search_hits = list(ddgs.text(query.strip(), max_results=max_results))
 
             for hit in search_hits:
@@ -104,29 +125,32 @@ def search_and_read_web_articles(
                 extracted_data = extract_from_url(target_url)
 
                 if extracted_data and extracted_data.get("content"):
-                    # Use search title if extraction produced an empty title
-                    if not extracted_data.get("title") or extracted_data["title"] == target_url:
+                    if (
+                        not extracted_data.get("title")
+                        or extracted_data["title"] == target_url
+                    ):
                         extracted_data["title"] = hit_title
                     scraped_documents.append(extracted_data)
-                else:
+                elif snippet_body:
                     # Fallback to search snippet if full webpage extraction was blocked
-                    if snippet_body:
-                        scraped_documents.append(
-                            {
-                                "source": target_url,
-                                "type": "web",
-                                "title": hit_title,
-                                "content": (
-                                    f"[Source: Web Search Snippet]\n"
-                                    f"[Title: {hit_title}]\n"
-                                    f"[URL: {target_url}]\n"
-                                    f"----------------------------------------\n\n"
-                                    f"{snippet_body.strip()}"
-                                ),
-                            }
-                        )
+                    scraped_documents.append(
+                        {
+                            "source": target_url,
+                            "type": "web",
+                            "title": hit_title,
+                            "content": (
+                                f"[Source: Web Search Snippet]\n"
+                                f"[Title: {hit_title}]\n"
+                                f"[URL: {target_url}]\n"
+                                f"----------------------------------------\n\n"
+                                f"{snippet_body.strip()}"
+                            ),
+                        }
+                    )
 
     except Exception as e:
-        print(f"[Error in search_service]: Web search & read failed for query '{query}': {e}")
+        print(
+            f"[Error in search_service]: Web search & read failed for query '{query}': {e}"
+        )
 
     return scraped_documents
