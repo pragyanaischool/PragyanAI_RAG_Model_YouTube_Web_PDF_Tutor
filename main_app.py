@@ -68,7 +68,7 @@ for state_key, default_val in [
 st.markdown(
     f"""
 <div class="main-header">
-    <h1>🎓 NCET GenAI: Multimodal RAG & Slide Studio</h1>
+    <h1> PragyanAI GenAI: Multimodal RAG & Slide Studio</h1>
     <p>Powered by Groq <code>{GROQ_MODEL}</code> & <code>whisper-large-v3</code> • Slide Studio • Exam Solver & Citation Engine</p>
 </div>
 """,
