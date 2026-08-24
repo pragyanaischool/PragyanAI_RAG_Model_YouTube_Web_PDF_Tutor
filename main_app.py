@@ -1,6 +1,6 @@
 """
 Main Streamlit Application for PragyanAI GenAI Multimodal RAG Suite.
-Integrates YouTube discovery, Slide Carousel Studio, Exam Evaluation, and Voice RAG.
+Features YouTube Studio, Deep-Dive Notes Studio with MD/PDF export, Exam Solver, and Voice RAG.
 """
 
 import os
@@ -11,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-# Safe cross-version LangChain chain import with fallback
+# Cross-version chain import with fallback
 try:
     from langchain.chains import create_retrieval_chain
     from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -35,7 +35,11 @@ from core.extractors import (
 )
 from core.search_service import search_multiple_youtube_videos, search_and_read_web_articles
 from core.voice_lang_service import transcribe_audio_bytes, text_to_speech, translate_content
-from core.note_synthesizer import generate_single_doc_notes, generate_combined_master_notes
+from core.note_synthesizer import (
+    generate_single_doc_notes,
+    generate_combined_master_notes,
+    export_notes_to_pdf,
+)
 from core.exam_solver import solve_multiformat_questions, export_assessment_to_pdf
 
 # Page configuration
@@ -46,16 +50,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Load custom CSS
+# Load custom styling
 if os.path.exists("assets/style.css"):
     with open("assets/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Initialize Session State Variables
+# Session state initialization
 for state_key, default_val in [
     ("extracted_docs", []),
     ("doc_notes", {}),
-    ("master_notes", []),
+    ("master_notes", ""),
     ("yt_search_results", []),
     ("selected_video", None),
     ("current_trans", None),
@@ -68,8 +72,8 @@ for state_key, default_val in [
 st.markdown(
     f"""
 <div class="main-header">
-    <h1> PragyanAI GenAI: Multimodal RAG & Slide Studio</h1>
-    <p>Powered by Groq <code>{GROQ_MODEL}</code> & <code>whisper-large-v3</code> • Slide Studio • Exam Solver & Citation Engine</p>
+    <h1>🎓 NCET GenAI: Multimodal RAG & Deep-Dive Notes Studio</h1>
+    <p>Powered by Groq <code>{GROQ_MODEL}</code> & <code>whisper-large-v3</code> • In-Depth Notes Synthesizer • Exam Solver & Citations</p>
 </div>
 """,
     unsafe_allow_html=True,
@@ -100,9 +104,9 @@ with st.sidebar:
         accept_multiple_files=True,
     )
 
-    if st.button("🚀 Ingest & Index All", use_container_width=True):
+    if st.button("🚀 Ingest & Generate Notes", use_container_width=True):
         new_docs = []
-        with st.spinner("Extracting multi-source documents and vectorizing..."):
+        with st.spinner("Extracting sources, vectorizing, and expanding deep-dive notes..."):
             if web_topic:
                 new_docs.extend(search_and_read_web_articles(web_topic, max_results=2))
             if direct_url:
@@ -135,17 +139,17 @@ with st.sidebar:
                     st.session_state["extracted_docs"]
                 )
 
-                # Generate individual slide decks
+                # Generate comprehensive individual notes
                 for doc in new_docs:
                     st.session_state["doc_notes"][doc["title"]] = generate_single_doc_notes(
                         doc["title"], doc["type"], doc["content"]
                     )
 
-                # Generate master curriculum deck
+                # Generate comprehensive combined master notes
                 st.session_state["master_notes"] = generate_combined_master_notes(
                     st.session_state["extracted_docs"]
                 )
-                st.success(f"✅ Ingested and indexed {len(new_docs)} source(s)!")
+                st.success(f"✅ Ingested {len(new_docs)} source(s) and generated comprehensive study notes!")
             else:
                 st.warning("Please provide at least one input source.")
 
@@ -153,7 +157,7 @@ with st.sidebar:
 tab1, tab2, tab3, tab4 = st.tabs(
     [
         "🎥 YouTube Studio & Player",
-        "📊 Slide Deck Studio",
+        "📖 Deep-Dive Notes Studio",
         "📄 Exam Solver & Citations",
         "🎙️ Voice & Text RAG Chat",
     ]
@@ -190,7 +194,7 @@ with tab1:
                     use_container_width=True,
                 ):
                     st.session_state["selected_video"] = vid
-                    with st.spinner("Extracting audio and transcribing via Groq Whisper..."):
+                    with st.spinner("Transcribing and synthesizing deep-dive notes..."):
                         trans_data = extract_from_youtube(vid["url"])
                         if trans_data:
                             st.session_state["current_trans"] = trans_data
@@ -201,7 +205,14 @@ with tab1:
                             st.session_state["vectorstore"] = index_documents_to_chroma(
                                 st.session_state["extracted_docs"]
                             )
-                            st.success("✅ Transcribed and indexed into Vector DB!")
+                            st.session_state["doc_notes"][trans_data["title"]] = (
+                                generate_single_doc_notes(
+                                    trans_data["title"],
+                                    trans_data["type"],
+                                    trans_data["content"],
+                                )
+                            )
+                            st.success("✅ Transcribed and synthesized notes!")
 
     if st.session_state["selected_video"] and st.session_state["current_trans"]:
         st.markdown("---")
@@ -220,69 +231,73 @@ with tab1:
                 height=260,
             )
 
-# ----------------- TAB 2: SLIDE STUDIO -----------------
+# ----------------- TAB 2: DEEP-DIVE NOTES STUDIO -----------------
 with tab2:
-    st.subheader("📊 Slide-by-Slide Study Notes Carousel")
-    sub1, sub2 = st.tabs(["Individual Source Slides", "Combined Master Deck"])
+    st.subheader("📖 Deep-Dive Source Notes & Enhanced Learning Guides")
+    sub1, sub2 = st.tabs(["Individual Source Handbook", "Unified Master Curriculum"])
 
     with sub1:
         if not st.session_state["doc_notes"]:
-            st.info("Ingest documents in the sidebar to generate individual slide decks.")
+            st.info("Ingest sources from the sidebar to generate comprehensive technical notes.")
         else:
             chosen_doc = st.selectbox(
-                "Select Ingested Document:", list(st.session_state["doc_notes"].keys())
+                "Select Ingested Document / Source:",
+                list(st.session_state["doc_notes"].keys()),
             )
-            deck = st.session_state["doc_notes"][chosen_doc]
+            notes_content = st.session_state["doc_notes"][chosen_doc]
 
-            if f"slide_idx_{chosen_doc}" not in st.session_state:
-                st.session_state[f"slide_idx_{chosen_doc}"] = 0
-            cur_idx = st.session_state[f"slide_idx_{chosen_doc}"]
-
-            cp, cm, cn = st.columns([1, 3, 1])
-            with cp:
-                if st.button("⬅️ Previous Slide", key=f"p_{chosen_doc}", disabled=(cur_idx == 0)):
-                    st.session_state[f"slide_idx_{chosen_doc}"] -= 1
-                    st.rerun()
-            with cm:
-                st.markdown(
-                    f"<p style='text-align:center;font-weight:600;'>Slide {cur_idx + 1} of {len(deck)}</p>",
-                    unsafe_allow_html=True,
+            # Download Action Bar
+            col_d1, col_d2, col_d3 = st.columns([1.5, 1.5, 4])
+            with col_d1:
+                st.download_button(
+                    label="📥 Download as Markdown (.md)",
+                    data=notes_content,
+                    file_name=f"{chosen_doc[:30].replace(' ', '_')}_Notes.md",
+                    mime="text/markdown",
+                    use_container_width=True,
                 )
-            with cn:
-                if st.button("Next Slide ➡️", key=f"n_{chosen_doc}", disabled=(cur_idx == len(deck) - 1)):
-                    st.session_state[f"slide_idx_{chosen_doc}"] += 1
-                    st.rerun()
+            with col_d2:
+                pdf_p = export_notes_to_pdf(notes_content, title=f"Study Guide: {chosen_doc[:40]}")
+                with open(pdf_p, "rb") as pdf_f:
+                    st.download_button(
+                        label="📥 Download as PDF (.pdf)",
+                        data=pdf_f,
+                        file_name=f"{chosen_doc[:30].replace(' ', '_')}_Notes.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                    )
 
-            st.markdown(f"<div class='slide-card'>{deck[cur_idx]}</div>", unsafe_allow_html=True)
+            st.divider()
+            st.markdown(notes_content)
 
     with sub2:
         if not st.session_state["master_notes"]:
-            st.info("Master deck will appear once documents are ingested.")
+            st.info("Unified master curriculum will appear here once sources are ingested.")
         else:
-            if "master_idx" not in st.session_state:
-                st.session_state["master_idx"] = 0
-            m_cur = st.session_state["master_idx"]
-            m_deck = st.session_state["master_notes"]
+            master_content = st.session_state["master_notes"]
 
-            cp, cm, cn = st.columns([1, 3, 1])
-            with cp:
-                if st.button("⬅️ Previous", key="m_p", disabled=(m_cur == 0)):
-                    st.session_state["master_idx"] -= 1
-                    st.rerun()
-            with cm:
-                st.markdown(
-                    f"<p style='text-align:center;font-weight:600;'>Master Deck: Slide {m_cur + 1} of {len(m_deck)}</p>",
-                    unsafe_allow_html=True,
+            col_m1, col_m2, col_m3 = st.columns([1.5, 1.5, 4])
+            with col_m1:
+                st.download_button(
+                    label="📥 Download Master Notes (.md)",
+                    data=master_content,
+                    file_name="Unified_Master_Curriculum_Notes.md",
+                    mime="text/markdown",
+                    use_container_width=True,
                 )
-            with cn:
-                if st.button("Next ➡️", key="m_n", disabled=(m_cur == len(m_deck) - 1)):
-                    st.session_state["master_idx"] += 1
-                    st.rerun()
+            with col_m2:
+                master_pdf = export_notes_to_pdf(master_content, title="Unified Master Curriculum")
+                with open(master_pdf, "rb") as m_pdf_f:
+                    st.download_button(
+                        label="📥 Download Master PDF (.pdf)",
+                        data=m_pdf_f,
+                        file_name="Unified_Master_Curriculum_Notes.pdf",
+                        mime="application/pdf",
+                        use_container_width=True,
+                    )
 
-            st.markdown(
-                f"<div class='slide-card' style='border-color: #38bdf8;'>{m_deck[m_cur]}</div>",
-                unsafe_allow_html=True,
-            )
+            st.divider()
+            st.markdown(master_content)
 
 # ----------------- TAB 3: EXAM SOLVER & CITATIONS -----------------
 with tab3:
@@ -331,8 +346,8 @@ with tab3:
     if "solved_exam" in st.session_state:
         st.markdown("---")
         st.markdown(st.session_state["solved_exam"])
-        pdf_path = export_assessment_to_pdf(st.session_state["solved_exam"])
-        with open(pdf_path, "rb") as f:
+        exam_pdf = export_assessment_to_pdf(st.session_state["solved_exam"])
+        with open(exam_pdf, "rb") as f:
             st.download_button(
                 "📥 Download Model Solutions (PDF)",
                 f,
@@ -377,7 +392,6 @@ with tab4:
                     ]
                 )
 
-                # Execute RAG using chain or modern LCEL runnable pipeline
                 if LEGACY_CHAIN_AVAILABLE:
                     chain = create_retrieval_chain(retriever, create_stuff_documents_chain(llm, prompt))
                     result = chain.invoke({"input": active_query})
