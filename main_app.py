@@ -56,7 +56,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
+st.image("PragyanAI_Transperent.png")
 # Load custom CSS
 if os.path.exists("assets/style.css"):
     with open("assets/style.css") as f:
