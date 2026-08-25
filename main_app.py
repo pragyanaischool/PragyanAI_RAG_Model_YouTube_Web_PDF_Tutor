@@ -88,7 +88,7 @@ def notes_to_str(content) -> str:
 st.markdown(
     f"""
 <div class="main-header">
-    <h1>🎓 PragyanAI GenAI: Multimodal RAG & Deep-Dive Notes Studio</h1>
+    <h1> PragyanAI GenAI: Multimodal RAG & Deep-Dive Notes Studio</h1>
     <p>Powered by Groq <code>{GROQ_MODEL}</code> & <code>whisper-large-v3</code> • arXiv Papers & Wikipedia • Google & Tech Blogs • Exam Solver</p>
 </div>
 """,
@@ -97,20 +97,20 @@ st.markdown(
 
 # Sidebar Configuration & Ingestion
 with st.sidebar:
-    st.header("⚙️ Configuration & Ingestion")
+    st.header(" Configuration & Ingestion")
     if GROQ_API_KEY:
-        st.success("🔑 Groq API Key Active")
+        st.success(" Groq API Key Active")
     else:
         key_input = st.text_input("Groq API Key", type="password", placeholder="gsk_...")
         if key_input:
             os.environ["GROQ_API_KEY"] = key_input
 
     st.caption(f"Active Model: `{GROQ_MODEL}`")
-    selected_lang = st.selectbox("🌐 Interface Language", list(LANGUAGE_CODES.keys()))
+    selected_lang = st.selectbox(" Interface Language", list(LANGUAGE_CODES.keys()))
     lang_code = LANGUAGE_CODES[selected_lang]
 
     st.divider()
-    st.subheader("📥 Direct File & Link Ingest")
+    st.subheader(" Direct File & Link Ingest")
     direct_url = st.text_input("Direct WebLink URL", placeholder="https://example.com")
     yt_url = st.text_input("Direct YouTube URL", placeholder="https://youtube.com/watch?v=...")
     uploaded_files = st.file_uploader(
@@ -119,7 +119,7 @@ with st.sidebar:
         accept_multiple_files=True,
     )
 
-    if st.button("🚀 Ingest Files & Generate Notes"):
+    if st.button(" Ingest Files & Generate Notes"):
         new_docs = []
         with st.spinner("Extracting sources, vectorizing, and expanding deep-dive notes..."):
             if direct_url:
@@ -167,17 +167,17 @@ with st.sidebar:
 # Main Application Tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
-        "🔬 Academic & Web Research Discovery",
-        "🎥 YouTube Studio & Player",
-        "📖 Deep-Dive Notes Studio",
-        "📄 Exam Solver & Citations",
-        "🎙️ Voice & Text RAG Chat",
+        "1. Academic & Web Research Discovery",
+        "2. YouTube Studio & Player",
+        "3. Deep-Dive Notes Studio",
+        "4. Exam Solver & Citations",
+        "5. Voice & Text RAG Chat",
     ]
 )
 
 # ----------------- TAB 1: ACADEMIC & WEB RESEARCH DISCOVERY -----------------
 with tab1:
-    st.subheader("🔬 Multi-Source Academic & Web Research Discovery")
+    st.subheader(" Multi-Source Academic & Web Research Discovery")
     st.caption("Search arXiv Papers, Wikipedia Topics, Google Links, Medium/Tech Blogs, and Articles.")
 
     c_query, c_filter, c_btn = st.columns([3, 1.3, 1])
@@ -230,25 +230,25 @@ with tab1:
             st.session_state["academic_search_results"] = aggregated_results
 
     if st.session_state["academic_search_results"]:
-        st.markdown(f"#### 📚 Discovered Knowledge Sources ({len(st.session_state['academic_search_results'])})")
+        st.markdown(f"#### Discovered Knowledge Sources ({len(st.session_state['academic_search_results'])})")
         
         for idx, item in enumerate(st.session_state["academic_search_results"]):
             with st.container():
                 c_card, c_act = st.columns([4, 1.2])
                 with c_card:
-                    badge_label = item.get("badge", "🌐 Web Source")
+                    badge_label = item.get("badge", " Web Source")
                     st.markdown(f"<span class='source-pill'>{badge_label}</span> **[{item['title']}]({item['url']})**", unsafe_allow_html=True)
                     
                     if item.get("authors"):
-                        st.caption(f"✍️ **Authors:** {item['authors']} | **Published:** {item.get('date', 'N/A')}")
+                        st.caption(f" **Authors:** {item['authors']} | **Published:** {item.get('date', 'N/A')}")
                     else:
-                        st.caption(f"🔗 `{item['url']}`")
+                        st.caption(f" `{item['url']}`")
                         
                     if item.get("snippet"):
                         st.markdown(f"> *{item['snippet']}*")
 
                 with c_act:
-                    if st.button("📖 Explore & Ingest", key=f"acad_explore_{idx}"):
+                    if st.button(" Explore & Ingest", key=f"acad_explore_{idx}"):
                         with st.spinner(f"Ingesting {item['title'][:25]} & synthesizing notes..."):
                             # If content is already pre-extracted (e.g. arXiv / Wikipedia)
                             if item.get("content"):
@@ -290,7 +290,7 @@ with tab1:
 
 # ----------------- TAB 2: YOUTUBE STUDIO -----------------
 with tab2:
-    st.subheader("🎥 Topic-Based YouTube Discovery & Interactive Player")
+    st.subheader(" Topic-Based YouTube Discovery & Interactive Player")
     col1, col2 = st.columns([3, 1])
     with col1:
         yt_search_query = st.text_input(
@@ -299,22 +299,22 @@ with tab2:
         )
     with col2:
         st.write("")
-        if st.button("🔍 Search Videos") and yt_search_query:
+        if st.button(" Search Videos") and yt_search_query:
             with st.spinner("Searching YouTube via yt-dlp engine..."):
                 st.session_state["yt_search_results"] = search_multiple_youtube_videos(
                     yt_search_query, max_results=6
                 )
 
     if st.session_state["yt_search_results"]:
-        st.markdown("#### 📺 Search Results (Click to Play)")
+        st.markdown("####  Search Results (Click to Play)")
         cols = st.columns(3)
         for i, vid in enumerate(st.session_state["yt_search_results"]):
             with cols[i % 3]:
                 if vid.get("thumbnail"):
                     st.image(vid["thumbnail"])
                 st.markdown(f"**{vid['title'][:45]}...**")
-                st.caption(f"⏱️ {vid['duration']} | {vid['channel']}")
-                if st.button("▶️ Play Video", key=f"yt_play_{vid['id']}"):
+                st.caption(f" {vid['duration']} | {vid['channel']}")
+                if st.button(" Play Video", key=f"yt_play_{vid['id']}"):
                     st.session_state["selected_video"] = vid
                     st.session_state["current_trans"] = None
                     st.session_state["trans_text"] = ""
@@ -322,14 +322,14 @@ with tab2:
 
     if st.session_state["selected_video"]:
         st.markdown("---")
-        st.markdown(f"### 🎬 Now Playing: {st.session_state['selected_video']['title']}")
+        st.markdown(f"###  Now Playing: {st.session_state['selected_video']['title']}")
         
         col_player, col_details = st.columns([1.2, 1])
         with col_player:
             st.video(st.session_state["selected_video"]["url"])
             st.caption(f"Channel: {st.session_state['selected_video']['channel']} | Duration: {st.session_state['selected_video']['duration']}")
             
-            if st.button("🎧 Extract Audio, Transcribe & Index to Vector DB", type="primary"):
+            if st.button(" Extract Audio, Transcribe & Index to Vector DB", type="primary"):
                 with st.spinner("Extracting audio, running Groq Whisper & updating Vector DB..."):
                     trans_data = extract_from_youtube(st.session_state["selected_video"]["url"])
                     if trans_data:
@@ -347,17 +347,17 @@ with tab2:
 
         with col_details:
             if st.session_state["current_trans"]:
-                st.markdown(f"#### 📝 Transcript ({selected_lang})")
+                st.markdown(f"####  Transcript ({selected_lang})")
                 audio_file = text_to_speech(st.session_state["trans_text"], lang_code)
                 if audio_file:
                     st.audio(audio_file, format="audio/mp3")
                 st.text_area("Transcript Text", st.session_state["trans_text"], height=240)
             else:
-                st.info("💡 Click **'Extract Audio, Transcribe & Index to Vector DB'** to process subtitles, expand notes, and enable RAG Q&A.")
+                st.info(" Click **'Extract Audio, Transcribe & Index to Vector DB'** to process subtitles, expand notes, and enable RAG Q&A.")
 
 # ----------------- TAB 3: DEEP-DIVE NOTES STUDIO -----------------
 with tab3:
-    st.subheader("📖 Deep-Dive Source Notes & Enhanced Learning Guides")
+    st.subheader(" Deep-Dive Source Notes & Enhanced Learning Guides")
     sub1, sub2 = st.tabs(["Individual Source Handbook", "Unified Master Curriculum"])
 
     with sub1:
@@ -374,7 +374,7 @@ with tab3:
             col_d1, col_d2, col_d3 = st.columns([1.5, 1.5, 4])
             with col_d1:
                 st.download_button(
-                    label="📥 Download Markdown (.md)",
+                    label=" Download Markdown (.md)",
                     data=notes_str,
                     file_name=f"{chosen_doc[:30].replace(' ', '_')}_Notes.md",
                     mime="text/markdown",
@@ -383,7 +383,7 @@ with tab3:
                 pdf_p = export_notes_to_pdf(notes_str, title=f"Study Guide: {chosen_doc[:40]}")
                 with open(pdf_p, "rb") as pdf_f:
                     st.download_button(
-                        label="📥 Download PDF (.pdf)",
+                        label=" Download PDF (.pdf)",
                         data=pdf_f.read(),
                         file_name=f"{chosen_doc[:30].replace(' ', '_')}_Notes.pdf",
                         mime="application/pdf",
@@ -401,7 +401,7 @@ with tab3:
             col_m1, col_m2, col_m3 = st.columns([1.5, 1.5, 4])
             with col_m1:
                 st.download_button(
-                    label="📥 Download Master Notes (.md)",
+                    label=" Download Master Notes (.md)",
                     data=master_str,
                     file_name="Unified_Master_Curriculum_Notes.md",
                     mime="text/markdown",
@@ -410,7 +410,7 @@ with tab3:
                 master_pdf = export_notes_to_pdf(master_str, title="Unified Master Curriculum")
                 with open(master_pdf, "rb") as m_pdf_f:
                     st.download_button(
-                        label="📥 Download Master PDF (.pdf)",
+                        label=" Download Master PDF (.pdf)",
                         data=m_pdf_f.read(),
                         file_name="Unified_Master_Curriculum_Notes.pdf",
                         mime="application/pdf",
@@ -421,7 +421,7 @@ with tab3:
 
 # ----------------- TAB 4: EXAM SOLVER & CITATIONS -----------------
 with tab4:
-    st.subheader("📄 Exam Paper Solver with Marks Rubrics & Grounded Citations")
+    st.subheader(" Exam Paper Solver with Marks Rubrics & Grounded Citations")
     q_file = st.file_uploader(
         "Upload Question Paper (PDF, DOCX)",
         type=["pdf", "docx"],
@@ -452,7 +452,7 @@ with tab4:
     elif q_txt:
         raw_questions = q_txt
 
-    if st.button("🚀 Solve Questions with Marks & Citations"):
+    if st.button(" Solve Questions with Marks & Citations"):
         if "vectorstore" not in st.session_state:
             st.error("Please ingest sources first to build the Vector DB.")
         elif not raw_questions:
@@ -469,7 +469,7 @@ with tab4:
         exam_pdf = export_assessment_to_pdf(st.session_state["solved_exam"])
         with open(exam_pdf, "rb") as f:
             st.download_button(
-                "📥 Download Model Solutions (PDF)",
+                " Download Model Solutions (PDF)",
                 f.read(),
                 file_name="Model_Solutions_With_Citations.pdf",
                 mime="application/pdf",
@@ -477,7 +477,7 @@ with tab4:
 
 # ----------------- TAB 5: VOICE & TEXT RAG -----------------
 with tab5:
-    st.subheader("🎙️ Multilingual Voice & Text Assistant")
+    st.subheader(" Multilingual Voice & Text Assistant")
     col_mic, col_txt = st.columns([1, 4])
     with col_mic:
         st.markdown("**Speak Query**")
@@ -530,13 +530,13 @@ with tab5:
                     raw_answer = rag_lcel_chain.invoke(active_query)
 
                 final_answer = translate_content(raw_answer, lang_code)
-                st.markdown(f"#### 💡 Response ({selected_lang})")
+                st.markdown(f"####  Response ({selected_lang})")
                 st.write(final_answer)
                 tts_audio = text_to_speech(final_answer, lang_code)
                 if tts_audio:
                     st.audio(tts_audio, format="audio/mp3")
 
-                with st.expander("📚 Source Chunks Used"):
+                with st.expander(" Source Chunks Used"):
                     for idx, doc in enumerate(retrieved_chunks):
                         src = doc.metadata.get("source", "Unknown")
                         st.markdown(f"<span class='source-pill'>Chunk {idx+1}</span> `{src}`", unsafe_allow_html=True)
